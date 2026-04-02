@@ -3,13 +3,37 @@
 document.addEventListener('DOMContentLoaded', () => {
     const filterButtons = document.querySelectorAll('.filter-btn');
     const showHiddenCheckbox = document.getElementById('show-hidden');
+    const cards = document.querySelectorAll('.card');
 
     // State holders
     let hiddenTiles = new Set();
     let favourites = new Set();
     let comparison = new Set();
 
-    let currentFilter = 'all';
+    const FILTER_TYPES = {
+        ALL: 'all',
+        FAVOURITES: 'favourites',
+        COMPARISON: 'comparison'
+    };
+
+    const TOGGLE_TYPE = {
+        LIKE: 'like',
+        COMPARE: 'compare',
+        HIDE: 'hide'
+    };
+
+    const FA_ICON_STATES = {
+        REGULAR: 'fa-regular',
+        SOLID: 'fa-solid'
+    };
+
+    const FA_ICONS = {
+        HEART: 'fa-heart',
+        EYE: 'fa-eye',
+        EYE_SLASH: 'fa-eye-slash'
+    };
+
+    let currentFilter = FILTER_TYPES.ALL;
     let showHidden = false;
 
     const STORAGE_KEYS = {
@@ -41,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderActionButtons = () => {
-        const cards = document.querySelectorAll('.card');
         cards.forEach(card => {
             if (card.querySelector('.card__buttons-box')) {
                 return;
@@ -50,13 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const buttonsBoxHTML = `
                 <div class="card__buttons-box">
                     <div class="card__buttons">
-                        <button class="card__button card__button--like">
+                        <button type="button" class="card__button card__button--like">
                             <i class="fa-regular fa-heart"></i>
                         </button>
-                        <button class="card__button card__button--compare">
+                        <button type="button" class="card__button card__button--compare">
                             <i class="fa-solid fa-scale-balanced"></i>
                         </button>
-                        <button class="card__button card__button--hide">
+                        <button type="button" class="card__button card__button--hide">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
@@ -65,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.insertAdjacentHTML('afterbegin', buttonsBoxHTML);
 
             const addToCartButtonHTML = `
-                <button class="card__add-button">
+                <button type="button" class="card__add-button">
                     <i class="fa-solid fa-cart-shopping"></i>
                     ADD TO CART
                 </button>
@@ -74,36 +97,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const changeButtonIconState = (button, previousIconName, changeTo, reversed) => {
+        const icon = button.querySelector('i');
+        if (!reversed) {
+            icon.classList.remove(FA_ICON_STATES.REGULAR, previousIconName);
+            icon.classList.add(FA_ICON_STATES.SOLID, changeTo);
+        } else {
+            icon.classList.remove(FA_ICON_STATES.SOLID, previousIconName);
+            icon.classList.add(FA_ICON_STATES.REGULAR, changeTo);
+        }
+    };
+
+    const addClassToClassList = (btn, newClass) => btn.classList.add(newClass);
+
     const restoreCardStates = () => {
-        const cards = document.querySelectorAll('.card');
         cards.forEach(card => {
             const id = card.dataset.id;
 
             const likeBtn = card.querySelector('.card__button--like');
             if (likeBtn && favourites.has(id)) {
-                likeBtn.classList.add('active');
-                const icon = likeBtn.querySelector('i');
-                icon.classList.remove('fa-regular', 'fa-heart');
-                icon.classList.add('fa-solid', 'fa-heart');
+                addClassToClassList(likeBtn, 'active');
+                changeButtonIconState(likeBtn, FA_ICONS.HEART, FA_ICONS.HEART, false);
             }
 
             const compareBtn = card.querySelector('.card__button--compare');
             if (compareBtn && comparison.has(id)) {
-                compareBtn.classList.add('active');
+                addClassToClassList(compareBtn, 'active');
             }
 
             const hideBtn = card.querySelector('.card__button--hide');
             if (hideBtn && hiddenTiles.has(id)) {
-                hideBtn.classList.add('active');
-                const icon = hideBtn.querySelector('i');
-                icon.classList.remove('fa-regular', 'fa-eye');
-                icon.classList.add('fa-solid', 'fa-eye-slash');
+                addClassToClassList(hideBtn, 'active');
+                changeButtonIconState(likeBtn, FA_ICONS.EYE, FA_ICONS.EYE_SLASH, false);
             }
         });
     };
 
     const applyFilters = () => {
-        const cards = document.querySelectorAll('.card');
         cards.forEach(card => {
             const id = card.dataset.id;
             const isHidden = hiddenTiles.has(id);
@@ -111,64 +141,54 @@ document.addEventListener('DOMContentLoaded', () => {
             const isComp = comparison.has(id);
 
             let matchesFilter = true;
-            if (currentFilter === 'favourites' && !isFav) matchesFilter = false;
-            if (currentFilter === 'comparison' && !isComp) matchesFilter = false;
+            if (currentFilter === FILTER_TYPES.FAVOURITES && !isFav ||
+                currentFilter === FILTER_TYPES.COMPARISON && !isComp) {
+                matchesFilter = false;
+            }
+
+            card.classList.remove('card--hidden', 'card--faded');
 
             if (!matchesFilter) {
-                card.style.display = 'none';
+                addClassToClassList(card, 'card--hidden');
+                card.classList.add('card--hidden');
                 return;
             }
 
             if (isHidden && !showHidden) {
-                card.style.display = 'none';
-            } else {
-                card.style.display = 'block';
-                card.style.opacity = isHidden ? '0.5' : '1';
+                addClassToClassList(card, 'card--hidden');
+            } else if (isHidden) {
+                addClassToClassList(card, 'card--faded');
             }
         });
     };
 
-    const toggleFavourite = (cardId, button) => {
-        const icon = button.querySelector('i');
+    const toggleAction = (event, cardId, button, actionType) => {
+        event.preventDefault();
         const isActive = button.classList.contains('active');
 
-        if (isActive) {
-            icon.classList.remove('fa-solid', 'fa-heart');
-            icon.classList.add('fa-regular', 'fa-heart');
-            favourites.delete(cardId);
-        } else {
-            icon.classList.remove('fa-regular', 'fa-heart');
-            icon.classList.add('fa-solid', 'fa-heart');
-            favourites.add(cardId);
-        }
-
-        button.classList.toggle('active');
-        saveToLocalStorage();
-        applyFilters();
-    };
-
-    const toggleComparison = (cardId, button) => {
-        const isActive = button.classList.contains('active');
-        if (isActive) comparison.delete(cardId);
-        else comparison.add(cardId);
-
-        button.classList.toggle('active');
-        saveToLocalStorage();
-        applyFilters();
-    };
-
-    const toggleHide = (cardId, button) => {
-        const icon = button.querySelector('i');
-        const isActive = button.classList.contains('active');
-
-        if (isActive) {
-            icon.classList.remove('fa-solid', 'fa-eye-slash');
-            icon.classList.add('fa-regular', 'fa-eye');
-            hiddenTiles.delete(cardId);
-        } else {
-            icon.classList.remove('fa-regular', 'fa-eye');
-            icon.classList.add('fa-solid', 'fa-eye-slash');
-            hiddenTiles.add(cardId);
+        if (actionType === TOGGLE_TYPE.LIKE) {
+            const iconName = FA_ICONS.HEART;
+            if (isActive) {
+                changeButtonIconState(button, iconName, iconName, true);
+                favourites.delete(cardId);
+            } else {
+                changeButtonIconState(button, iconName, iconName, false);
+                favourites.add(cardId);
+            }
+        } else if (actionType === TOGGLE_TYPE.COMPARE) {
+            if (isActive) {
+                comparison.delete(cardId);
+            } else {
+                comparison.add(cardId);
+            }
+        } else if (actionType === TOGGLE_TYPE.HIDE) {
+            if (isActive) {
+                changeButtonIconState(button, FA_ICONS.EYE_SLASH, FA_ICONS.EYE, true);
+                hiddenTiles.delete(cardId);
+            } else {
+                changeButtonIconState(button, FA_ICONS.EYE, FA_ICONS.EYE_SLASH, false);
+                hiddenTiles.add(cardId);
+            }
         }
 
         button.classList.toggle('active');
@@ -185,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            addClassToClassList(btn, 'active');
             currentFilter = btn.dataset.filter;
             applyFilters();
         });
@@ -197,7 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const attachCardListeners = () => {
-        const cards = document.querySelectorAll('.card');
         cards.forEach(card => {
             const id = card.dataset.id;
 
@@ -206,22 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const hideBtn = card.querySelector('.card__button--hide');
 
             if (likeBtn) {
-                likeBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    toggleFavourite(id, likeBtn);
-                });
+                likeBtn.addEventListener('click', e => toggleAction(e, id, likeBtn, TOGGLE_TYPE.LIKE));
             }
             if (compareBtn) {
-                compareBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    toggleComparison(id, compareBtn);
-                });
+                compareBtn.addEventListener('click', e => toggleAction(e, id, compareBtn, TOGGLE_TYPE.COMPARE));
             }
             if (hideBtn) {
-                hideBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    toggleHide(id, hideBtn);
-                });
+                hideBtn.addEventListener('click', e => toggleAction(e, id, hideBtn, TOGGLE_TYPE.HIDE));
             }
         });
     };
