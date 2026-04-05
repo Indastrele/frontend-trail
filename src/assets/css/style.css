@@ -5,7 +5,6 @@ main {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
-    justify-content: center;
 }
 
 header {
@@ -52,7 +51,7 @@ header {
     transition: all 0.25s ease;
 }
 
-@media (hover: hover) {
+@media only screen and (min-width: 641px) {
     .filter-btn:hover {
         border-color: #34495e;
         transform: translateY(-1px);
@@ -115,17 +114,15 @@ header {
 }
 
 .catalog {
-    display: inline-flex;
-    justify-content: flex-start;
-    flex-flow: row wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 2rem;
-    max-width: 1200px;
-    margin: 0 1rem;
+    width: 100%;
 }
 
 .card {
+    justify-self: center;
     position: relative;
-    width: 250px;
     text-align: center;
     background-color: #fff;
     border-radius: 8px;
@@ -142,12 +139,33 @@ header {
     opacity: 0.5;
 }
 
-.card__buttons-box {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
+
+@media only screen and (max-width: 767px) {
+    .card__buttons-box {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
 }
+
+@media only screen and (min-width: 768px) {
+    .card__buttons-box {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .card:hover .card__buttons-box {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
 
 .card__buttons {
     display: flex;
@@ -179,7 +197,7 @@ header {
 .card__button--hide { color: #95a5a6; }
 .card__button--hide.active { color: #34495e; }
 
-@media (hover: hover) {
+@media only screen and (min-width: 768px) {
     .card__button--like:hover { color: #c0392b; }
     .card__button--like.active:hover { color: #c0392b; }
 
@@ -190,24 +208,53 @@ header {
     .card__button--hide.active:hover { color: #2c3e50; }
 }
 
+@media only screen and (min-width: 768px) {
+    .card__add-button {
+        width: 100%;
+        padding: 12px;
+        background-color: #000;
+        color: white;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 1rem;
+        opacity: 0;
+        transform: translateY(15px);
+        transition: all 0.3s ease;
+    }
 
-.card__add-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #000;
-    color: white;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
+    .card__add-button:hover {
+        background-color: #1f2c38;
+    }
+
+    .card:hover .card__add-button {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-@media (hover: hover) {
+
+@media only screen and (max-width: 767px) {
+    .card__add-button {
+        width: 100%;
+        padding: 12px;
+        background-color: #000;
+        color: white;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
     .card__add-button:hover {
         background-color: #1f2c38;
     }
